@@ -1,0 +1,269 @@
+
+; 64tass Turbo Assembler Macro V1.54.1900 listing file
+; 64tass -Wall -q -c -o remslash.prg -L remslash.lst main.asm
+; Mon Oct 14 14:06:24 2019
+
+;Offset	;Hex		;Monitor	;Source
+
+;******  Processing input file: main.asm
+
+=$801					SourceCode = $801
+=$b000					UserDictionary = $B000
+=$b800					UserCode = $B800
+
+;******  Processing file: data.asm
+
+>0008					codePtr:	.word ?							; code pointer (in BASIC code)
+>000a					dictPtr:	.word ?							; next free space in user dictionary
+>000c					objectPtr:	.word ?							; next free space for object code
+>000e					cStackPtr:	.word ? 						; compiler stack pointer
+>0010					zTemp0:		.word ?							; temporary words
+>0012					zTemp1:		.word ?
+>0014					zTemp2: 	.word ?
+=16					tokenBufferSize = 16 						; max size of a token.
+>0016					tokenBuffer:.fill tokenBufferSize+1 		; current token buffer as ASCIIZ
+>0027					lineNumber:	.word ?							; current line number
+>0029					currentType:.byte ?							; current type. $00 if should get one.
+>002a					currentYX:	.word ?							; current XY value to return.
+=$0780					zeroPageStore = $0780 						; store for $00-$7F
+=$0700					comStack = $0700							; stack used when compiling
+=$80					cStackSize = $80 							; size of compiler stack (max 128)
+=$06fd					stackTemp = $06FD 							; stack temporary store.
+=$8f					TOKEN_REM = $8F 							; REM Token.
+=$ff					SMK_TOPSTACK = $FF 							; this marks the top of the compiler stack
+
+;******  Return to file: main.asm
+
+
+;******  Processing file: macros.inc
+
+
+;******  Return to file: main.asm
+
+.a000	4c 03 a0	jmp $a003			jmp 	CompileRun
+.a003					CompileRun:
+.a003	20 ff a0	jsr $a0ff			jsr 	LoadBasicCode
+.a006	20 ac a0	jsr $a0ac			jsr 	Compiler
+.a009	60		rts				rts
+
+;******  Processing file: analysis/element.asm
+
+.a00a					GetElement:
+.a00a	a6 2a		ldx $2a				ldx 	currentYX 					; get the current values.
+.a00c	a4 2b		ldy $2b				ldy 	currentYX+1
+.a00e	a5 29		lda $29				lda 	currentType
+.a010	38		sec				sec
+.a011	d0 08		bne $a01b			bne 	_GEExit 					; if current then exit
+.a013	20 1f a0	jsr $a01f			jsr 	GetNextElement 				; get the next element
+.a016	a5 29		lda $29				lda 	currentType 				; if one was got.
+.a018	d0 f0		bne $a00a			bne 	GetElement 					; try again, it will pass now
+.a01a	18		clc				clc
+.a01b					_GEExit:
+.a01b	60		rts				rts
+.a01c					NextElement:
+.a01c	64 29		stz $29				stz 	currentType 				; clearing this will advance to the next one.
+.a01e	60		rts				rts
+.a01f					GetNextElement:
+.a01f	64 29		stz $29				stz 	currentType 				; clear the current type in case there's nothing.
+.a021	20 41 a0	jsr $a041			jsr 	FindNextToken
+.a024	b0 01		bcs $a027			bcs 	_GNEData 					; if CS there's something to get.
+.a026	60		rts				rts
+.a027					_GNEData:
+>a027	ff						.byte 	$FF
+.a028	60		rts				rts
+.a029					IsCharIdentifier:
+.a029	c9 2e		cmp #$2e			cmp 	#"."						; dot always is.
+.a02b	f0 12		beq $a03f			beq 	_ICIYes
+.a02d	c9 30		cmp #$30			cmp 	#"0"						; check 0-9
+.a02f	90 0c		bcc $a03d			bcc 	_ICINo
+.a031	c9 3a		cmp #$3a			cmp 	#"9"+1
+.a033	90 0a		bcc $a03f			bcc 	_ICIYes
+.a035	c9 41		cmp #$41			cmp 	#"A"						; check A-Z
+.a037	90 04		bcc $a03d			bcc 	_ICINo
+.a039	c9 5b		cmp #$5b			cmp 	#"Z"+1
+.a03b	90 02		bcc $a03f			bcc 	_ICIYes
+.a03d	18		clc		_ICINo:	clc
+.a03e	60		rts				rts
+.a03f	38		sec		_ICIYes:sec
+.a040	60		rts				rts
+
+;******  Return to file: main.asm
+
+
+;******  Processing file: analysis/findtoken.asm
+
+.a041					FindNextToken:
+.a041	48		pha				pha
+.a042	da		phx				phx
+.a043	5a		phy				phy
+.a044	b2 08		lda ($08)			lda 	(codePtr) 					; check not at end of line.
+.a046	d0 4f		bne $a097			bne  	_FNTNotEOL					; not end of line.
+.a048					_FNTEndOfLine:
+.a048	e6 08		inc $08				inc 	codePtr
+.a04a	d0 02		bne $a04e			bne 	_NoCarry
+.a04c	e6 09		inc $09				inc 	codePtr+1
+.a04e					_NoCarry:
+.a04e					_FNTNextLine:
+.a04e	b2 08		lda ($08)			lda 	(codePtr) 					; if the offset word is zero.
+.a050	a0 01		ldy #$01			ldy 	#1 							; then exit
+.a052	12 08		ora ($08)			ora 	(codePtr)
+.a054	d0 04		bne $a05a			bne 	_FNTNotEndProgram
+.a056	18		clc				clc 								; exit with carry clear == fail.
+.a057	4c a8 a0	jmp $a0a8			jmp 	_FNTExit
+.a05a					_FNTNotEndProgram:
+.a05a	a0 05		ldy #$05			ldy 	#5 							; the 5th character (2nd in line) must
+.a05c	b1 08		lda ($08),y			lda 	(codePtr),y 				; be a slash.
+.a05e	c9 2f		cmp #$2f			cmp 	#"/"
+.a060	d0 11		bne $a073			bne 	_FNTGoNextLine
+.a062	88		dey				dey		 							; check for REM at the start of the line.
+.a063	b1 08		lda ($08),y			lda 	(codePtr),y
+.a065	c9 8f		cmp #$8f			cmp 	#TOKEN_REM
+.a067	f0 17		beq $a080			beq 	_FNTFoundCode 				; if so then we have found REM/
+.a069	c9 2f		cmp #$2f			cmp 	#"/" 						; if first character is /, then this is //
+.a06b	d0 06		bne $a073			bne 	_FNTGoNextLine
+.a06d	a9 8f		lda #$8f			lda 	#TOKEN_REM 					; convert it to REM/
+.a06f	91 08		sta ($08),y			sta 	(codePtr),y
+.a071	80 0d		bra $a080			bra 	_FNTFoundCode 				; and carry on as found code.
+.a073					_FNTGoNextLine:
+.a073	a0 01		ldy #$01			ldy 	#1 							; read MSB to link through
+.a075	b1 08		lda ($08),y			lda 	(codePtr),y
+.a077	aa		tax				tax
+.a078	b2 08		lda ($08)			lda 	(codePtr) 					; read LSB
+.a07a	85 08		sta $08				sta 	codePtr 					; follow link.
+.a07c	86 09		stx $09				stx 	codePtr+1
+.a07e	80 ce		bra $a04e			bra 	_FNTNextLine 				; go through to next line.
+.a080					_FNTFoundCode:
+.a080	a0 02		ldy #$02			ldy 	#2 							; copy current line number so the error
+.a082	b1 08		lda ($08),y			lda 	(codePtr),y 				; handler knows the line to report.
+.a084	85 27		sta $27				sta 	lineNumber
+.a086	c8		iny				iny
+.a087	b1 08		lda ($08),y			lda 	(codePtr),y
+.a089	85 28		sta $28				sta 	lineNumber+1
+.a08b	c8		iny				iny
+.a08c	18		clc				clc
+.a08d	a5 08		lda $08				lda 	codePtr 					; add 6 to the codePtr.
+.a08f	69 06		adc #$06			adc 	#6							; (<offset>,<line#>,REM token, slash)
+.a091	85 08		sta $08				sta 	codePtr
+.a093	90 02		bcc $a097			bcc 	_FNTNotEOL
+.a095	e6 09		inc $09				inc 	codePtr+1
+.a097					_FNTNotEOL:
+.a097	b2 08		lda ($08)			lda 	(codePtr) 					; read byte at codePtr
+.a099	f0 ad		beq $a048			beq 	_FNTEndOfLine 				; if zero goto the next line.
+.a09b	c9 20		cmp #$20			cmp 	#" "						; is it space ?
+.a09d	d0 08		bne $a0a7			bne 	_FNTNotSpace 				; found a non space character, start extracting.
+.a09f	e6 08		inc $08				inc 	codePtr
+.a0a1	d0 02		bne $a0a5			bne 	_NoCarry
+.a0a3	e6 09		inc $09				inc 	codePtr+1
+.a0a5					_NoCarry:
+.a0a5	80 f0		bra $a097			bra 	_FNTNotEOL
+.a0a7					_FNTNotSpace:
+.a0a7	38		sec				sec 								; set carry to signify token found.
+.a0a8					_FNTExit:
+.a0a8	7a		ply				ply
+.a0a9	fa		plx				plx
+.a0aa	68		pla				pla
+.a0ab	60		rts				rts
+
+;******  Return to file: main.asm
+
+
+;******  Processing file: compiler/compiler.asm
+
+.a0ac					Compiler:
+.a0ac	ba		tsx				tsx 										; save stack pointer
+.a0ad	8e fd 06	stx $06fd			stx 	stackTemp
+.a0b0	20 e7 a0	jsr $a0e7			jsr 	StateSave 							; save zero page and stack
+.a0b3	a9 00		lda #$00			lda 	#(SourceCode-1) & $FF
+.a0b5	85 08		sta $08				sta 	codePtr
+.a0b7	a9 08		lda #$08			lda 	#(SourceCode-1) >> 8
+.a0b9	85 09		sta $09				sta 	codePtr+1
+.a0bb	a9 00		lda #$00			lda 	#(UserDictionary) & $FF
+.a0bd	85 0a		sta $0a				sta 	dictPtr
+.a0bf	a9 b0		lda #$b0			lda 	#(UserDictionary) >> 8
+.a0c1	85 0b		sta $0b				sta 	dictPtr+1
+.a0c3	9c 00 b0	stz $b000			stz 	UserDictionary 						; clear the user dictionary.
+.a0c6	a9 00		lda #$00			lda 	#(UserCode) & $FF
+.a0c8	85 0c		sta $0c				sta 	objectPtr
+.a0ca	a9 b8		lda #$b8			lda 	#(UserCode) >> 8
+.a0cc	85 0d		sta $0d				sta 	objectPtr+1
+.a0ce	a9 7f		lda #$7f			lda 	#(comStack+cStackSize-1) & $FF
+.a0d0	85 0e		sta $0e				sta 	cStackPtr
+.a0d2	a9 07		lda #$07			lda 	#(comStack+cStackSize-1) >> 8
+.a0d4	85 0f		sta $0f				sta 	cStackPtr+1
+.a0d6	a9 ff		lda #$ff			lda 	#SMK_TOPSTACK 						; put a dummy value to pop.
+.a0d8	92 0e		sta ($0e)			sta 	(cStackPtr)
+.a0da	64 29		stz $29				stz 	currentType 						; current type cleared to get first.
+.a0dc	20 0a a0	jsr $a00a			jsr 	GetElement
+.a0df					CompileTerminate:
+.a0df	ae fd 06	ldx $06fd			ldx 	stackTemp 							; restore the stack pointer
+.a0e2	9a		txs				txs
+.a0e3	20 f4 a0	jsr $a0f4			jsr 	StateRestore 						; restore ZPage and Exit.
+.a0e6	60		rts				rts
+
+;******  Return to file: main.asm
+
+
+;******  Processing file: utility/state.asm
+
+.a0e7					StateSave:
+.a0e7	a2 7f		ldx #$7f			ldx 	#$7F 						; copy zero page, blanking $00-$7F
+.a0e9	b5 00		lda $00,x	_SSCopy:lda 	$00,x
+.a0eb	9d 80 07	sta $0780,x			sta 	zeroPageStore,x
+.a0ee	74 00		stz $00,x			stz 	$00,x
+.a0f0	ca		dex				dex
+.a0f1	10 f6		bpl $a0e9			bpl 	_SSCopy
+.a0f3	60		rts				rts
+.a0f4					StateRestore:
+.a0f4	a2 7f		ldx #$7f			ldx 	#$7F 						; copy zero page, blanking $00-$7F
+.a0f6	bd 80 07	lda $0780,x	_SRCopy:lda 	zeroPageStore,x
+.a0f9	95 00		sta $00,x			sta 	$00,x
+.a0fb	ca		dex				dex
+.a0fc	10 f8		bpl $a0f6			bpl 	_SRCopy
+.a0fe	60		rts				rts
+
+;******  Return to file: main.asm
+
+
+;******  Processing file: utility/loadcode.asm
+
+.a0ff					LoadBasicCode:
+.a0ff	a9 2e		lda #$2e			lda 	#(LBCTest) & $FF
+.a101	85 10		sta $10				sta 	zTemp0
+.a103	a9 a1		lda #$a1			lda 	#(LBCTest) >> 8
+.a105	85 11		sta $11				sta 	zTemp0+1
+.a107	a9 01		lda #$01			lda 	#($801) & $FF
+.a109	85 12		sta $12				sta 	zTemp1
+.a10b	a9 08		lda #$08			lda 	#($801) >> 8
+.a10d	85 13		sta $13				sta 	zTemp1+1
+.a10f					_LBCCopy:
+.a10f	a0 02		ldy #$02			ldy 	#2							; skip over the loading address
+.a111	b1 10		lda ($10),y			lda 	(zTemp0),y 					; skips first two bytes :)
+.a113	92 12		sta ($12)			sta 	(zTemp1)
+.a115	e6 10		inc $10				inc 	zTemp0
+.a117	d0 02		bne $a11b			bne 	_NoCarry
+.a119	e6 11		inc $11				inc 	zTemp0+1
+.a11b					_NoCarry:
+.a11b	e6 12		inc $12				inc 	zTemp1
+.a11d	d0 02		bne $a121			bne 	_NoCarry
+.a11f	e6 13		inc $13				inc 	zTemp1+1
+.a121					_NoCarry:
+.a121	a5 10		lda $10				lda 	zTemp0
+.a123	c9 68		cmp #$68			cmp 	#LBCTestEnd & $FF
+.a125	d0 e8		bne $a10f			bne 	_LBCCopy
+.a127	a5 11		lda $11				lda 	zTemp0+1
+.a129	c9 a1		cmp #$a1			cmp 	#LBCTestEnd >> 8
+.a12b	d0 e2		bne $a10f			bne 	_LBCCopy
+.a12d	60		rts				rts
+.a12e					LBCTest:
+>a12e	01 08 0c 08 e8 03 99 c7				.binary 	"../generated/test.prg"
+>a136	28 31 34 29 00 17 08 f2 03 9e 34 30 39 36 30 00
+>a146	37 08 fc 03 2f 2f 20 44 45 46 20 54 45 53 54 20
+>a156	31 30 37 20 31 30 20 4d 4f 44 20 45 58 49 54 00
+>a166	00 00
+.a168					LBCTestEnd:
+
+;******  Return to file: main.asm
+
+.a168					EndCode:
+
+;******  End of listing
