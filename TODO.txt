@@ -1,16 +1,6 @@
 TODO List
 =========
 
-Dispatcher for tokens.
-	- scan files looking for token handlers, and build a table to auto dispatch.
-
-Variable Declarations (generalise for parameters and procedure def check)
-	- [type] <identifier> may be followed by ( @ or not.
-	- ( is a procedure definition which should be stub code.
-
-Check variable find works.
-	- globals/locals/byte/word
-
 Term Evaluator
 	- takes the result of term and converts it to a word or byte value
 	  constant or address reference. Add support for references @identifier
@@ -36,6 +26,22 @@ Inline
 	- inline variables, references. 
 	
 Procedure definitions
+	- strip user dictionary of local variables.
+
 Procedure Invocation
+
 Forward /
+	- just sets the mode to 8.
+
 Structures
+	- repeat
+	- if
+	- times
+
+Machine Code Libraries
+	- simple interface.
+		
+;
+;		Fixes
+;
+Run out of variable memory ? - Hit limit.

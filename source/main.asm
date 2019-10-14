@@ -12,6 +12,7 @@
 SourceCode = $801
 UserDictionary = $B000
 UserCode = $B800
+VariableMemory = $0600
 
 		.include 	"data.asm"
 		.include 	"macros.inc"
@@ -31,6 +32,8 @@ CompileRun:
 		.include 	"compiler/error.asm"		; error handling
 		.include 	"dictionary/dictionary.asm"	; dictionary code.
 		.include 	"generated/dictionary.inc"	; system dictionary.
+		.include 	"generated/vectors.inc"		; keyword handler vectors.
+		.include 	"handlers/byteword.asm"		; byte/word handlers.
 		.include 	"utility/constant.asm" 		; ASCII -> Integer conversion.			
 		.include 	"utility/state.asm"			; state save/load.
 		.include 	"utility/tostring.asm"		; integer to string.

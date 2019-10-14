@@ -61,7 +61,7 @@ _CTINoAdd:
 		bcc 	_CTIOkay
 		cmp 	#"A"
 		bcc 	_CTIFail
-		cmp 	#"F"
+		cmp 	#"F"+1
 		bcs 	_CTIFail
 		;
 		sec 								; hex adjust

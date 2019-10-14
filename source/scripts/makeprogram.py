@@ -41,9 +41,10 @@ class BasicProgram(object):
 		h.close()
 
 bp = BasicProgram()
-bp.add('endif what.ident >= > % $20A"hello"')
+#bp.add('word new.var@$142 byte var@$143')
+#bp.add('byte n2@$FEEE byte n33 word a byte b byte b')
+bp.add('byte b word w1')
+bp.add('byte str.len("')
 
 bp.complete()
 bp.writeProgram()
-
-

@@ -43,6 +43,20 @@ NextElement:
 
 ; ******************************************************************************
 ;
+;			 Get an element, throw an error if missing, skip it
+;
+; ******************************************************************************
+
+GetElementNext:
+		jsr 	GetElement 					; get the element
+		bcc 	_GENError 					; nothing
+		jsr 	NextElement 				; skip it
+		rts
+_GENError:
+		rerror	"MISSING"
+
+; ******************************************************************************
+;
 ;		Worker function for above. Does the actual extraction, conversion
 ;		Puts results in currentType/currentYX. 
 ;		If fails currentType will be $00
@@ -177,18 +191,18 @@ _GNEIsAlphaNumeric:
 		;
 		jsr 	DictionarySearch 			; figure out what it is ?
 		bcc 	_GNEIsUnknown
-		stx 	currentYX 					; this value is returned.
+		;
+		stx 	currentYX 					; this value is returned, save it.
 		sty 	currentYX+1
 		;
-		lda 	(currentYX),y 				; if it is 1xxx xxxx then do it with $80
-		and 	#$80						; (this is a procedure)
-		bne 	_GNEDoElement 
+		and 	#$80 						; if it is 1xxx xxxx then do it with $80
+		bne 	_GNEDoElement				; (this is a procedure) 
 		;
 		ldy 	#1 							; get type
 		lda 	(currentYX),y
 		and 	#$F8 						; if it is $08-$0F then it is a variable
-		eor 	#$08 						; so 1111 1xxx masked, then check it is 
-		beq		_GNEDoElement 				; 0000 1xxx. This returns zero.
+		cmp		#$08 						; so 1111 1xxx masked, then check it is 
+		beq		_GNEDoElement 				; 0000 1xxx. This returns 8, known variable code.
 		;
 		;
 		lda 	(currentYX),y 				; otherwise it must be a token.

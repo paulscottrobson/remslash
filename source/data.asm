@@ -20,6 +20,8 @@
 codePtr:	.word ?							; code pointer (in BASIC code)
 dictPtr:	.word ?							; next free space in user dictionary
 objectPtr:	.word ?							; next free space for object code
+varMemPtr:	.word ? 						; allocated variable space.
+
 cStackPtr:	.word ? 						; compiler stack pointer
 
 zTemp0:		.word ?							; temporary words
@@ -48,7 +50,7 @@ TOKEN_REM = $8F 							; REM Token.
 SMK_TOPSTACK = $FF 							; this marks the top of the compiler stack
 
 ELT_PROCEDURE = $80 						; retrieved element types
-ELT_VARIABLE = $00
+ELT_VARIABLE = $08
 ELT_UNKNOWNID = $01
 ELT_CONSTANT = $02
 ELT_STRING = $03

@@ -35,16 +35,48 @@ Compiler:
 		lda 	#SMK_TOPSTACK 						; put a dummy value to pop.
 		sta 	(cStackPtr)
 
+		set16 	varMemPtr,VariableMemory 			; set the variable memory pointer
+		
 		stz 	currentType 						; current type cleared to get first.
 
-		lda 	#8 			 						; set compile mode.					
+		lda 	#8 			 						; set compile mode to 8 bit.
 		sta 	compileMode
-l1:
-		jsr 	GetElement
+		;
+		;		Main Compiler loop
+		;
+CompileLoop:
+		jsr 	GetElement 							; get the current element
+		cmp 	#$40 								; check in range $40-$7F (e.g. a token)
+		bcc 	CompileNotToken 			
+		cmp 	#$80
+		bcs 	CompileNotToken
+		;
+		;		Handle a token.
+		;
+		jsr 	NextElement 						; skip this element
+		and 	#$3F 								; in range $00-$3F now
+		asl 	a 									; doubled, index into vector table
+		tax 										; use it as index into vector table.
+		;
+		lda 	TokenVectors,x 						; copy target address to zTemp0
+		sta 	zTemp0
+		lda 	TokenVectors+1,x
+		sta 	zTemp0+1
+		jsr 	CallZTemp0 							; call it
+		bra 	CompileLoop 						; and loop round
+		;
+CallZTemp0:
+		jmp 	(zTemp0)
+		;
+		;		Got something (type in A, data in XY, that is not a token)
+		;		Could be a procedure, variable, unknown identifier,string 
+		;		or constant.
+		;
+CompileNotToken:
 		.byte 	$FF
-		jsr 	NextElement
-		bra 	l1
-
+		;
+		;		Exit the compiler.
+		;
 CompileTerminate:		
 		ldx 	stackTemp 							; restore the stack pointer
 		txs

@@ -73,27 +73,32 @@ _DSSGoNext:
 
 ; ******************************************************************************
 ;
-;		Create an entry in the user dictionary with the name in the 
-;		tokenBuffer, data in YX and type in A. Returns address of
-;		new record in YX.
+;		Create an entry in the user dictionary using the name at YX. 
+;		Returns address of new record in YX.
 ;
 ; ******************************************************************************
 
 DictionaryCreate:
 		pha
 		;
-		phy 								; save data.high
-		ldy 	#1							; write the type byte out.
+		txa			 						; save address of name, with 5 deducted.
+		sec 								; this is because of the offset in the 
+		sbc 	#5 							; record.
+		sta 	zTemp0
+		tya
+		sbc 	#0
+		sta 	zTemp0+1 
+
+		ldy 	#1							; write three bytes of $00
+		lda 	#0
 		sta 	(dictPtr),y
-		txa 								; write data low
 		iny
 		sta 	(dictPtr),y
-		pla 								; write data high
 		iny
 		sta 	(dictPtr),y
 		iny 								; Y is now 5 - copy token name.
 _DCCopyName:
-		lda 	tokenBuffer-5,y 			
+		lda 	(zTemp0),y 			
 		sta 	(dictPtr),y
 		iny
 		asl 	a
