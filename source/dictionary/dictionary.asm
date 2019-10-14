@@ -74,14 +74,13 @@ _DSSGoNext:
 ; ******************************************************************************
 ;
 ;		Create an entry in the user dictionary with the name in the 
-;		tokenBuffer, data in YX and type in A.
+;		tokenBuffer, data in YX and type in A. Returns address of
+;		new record in YX.
 ;
 ; ******************************************************************************
 
 DictionaryCreate:
 		pha
-		phx
-		phy
 		;
 		phy 								; save data.high
 		ldy 	#1							; write the type byte out.
@@ -103,8 +102,11 @@ _DCCopyName:
 		lda 	#0 							; write the zero marking dictionary end
 		sta 	(dictPtr),y
 		;
-		tya 								; this is the offsest
+		tya 								; this is the offset
 		sta 	(dictPtr) 					; put as the first byte.
+		;
+		ldx 	dictPtr 					; load address into YX
+		ldy 	dictPtr+1
 		;
 		clc 								; add offset to dictptr
 		adc 	dictPtr 					; updating the next free slot.
@@ -112,8 +114,6 @@ _DCCopyName:
 		bcc 	_DCNoCarry
 		inc 	dictPtr
 _DCNoCarry:
-		ply
-		plx
 		pla
 		rts
 

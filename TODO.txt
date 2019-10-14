@@ -1,15 +1,40 @@
 TODO List
 =========
 
-Import error file from dotRem
 Dispatcher for tokens.
+	- scan files looking for token handlers, and build a table to auto dispatch.
+
 Variable Declarations (generalise for parameters and procedure def check)
+	- [type] <identifier> may be followed by ( @ or not.
+	- ( is a procedure definition which should be stub code.
+
 Check variable find works.
+	- globals/locals/byte/word
+
+Term Evaluator
+	- takes the result of term and converts it to a word or byte value
+	  constant or address reference. Add support for references @identifier
+	  may involve inline compilation of strings.
+	  (issue with strings in banked space - code note about string transcience)
+
 Terms
+	- term setting mode and loading accumulators
+	- system for dumping and disassembly on exit.
+
 Store
+	- store to byte and word and the various issues.
+
 Binary
+	- handler for binary ops will be fairly consistent apart from 
+	  action when upper byte is constant, zero. When word <bin> byte
+	  the upper byte is zero.
+
 Unary
+	- inline compilation according to mode.
+
 Inline
+	- inline variables, references. 
+	
 Procedure definitions
 Procedure Invocation
 Forward /

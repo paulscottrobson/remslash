@@ -25,15 +25,10 @@ CompileRun:
 		jsr 	Compiler
 		rts
 
-SyntaxError:
-		rerror 	"SYNTAX"
-
-ErrorHandler:
-		.byte 	$FF
-
 		.include 	"analysis/element.asm"		; element extraction manager.
 		.include 	"analysis/findtoken.asm"	; scan through code looking for tokens.
 		.include 	"compiler/compiler.asm"		; compiler main
+		.include 	"compiler/error.asm"		; error handling
 		.include 	"dictionary/dictionary.asm"	; dictionary code.
 		.include 	"generated/dictionary.inc"	; system dictionary.
 		.include 	"utility/constant.asm" 		; ASCII -> Integer conversion.			

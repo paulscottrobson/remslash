@@ -33,13 +33,15 @@ lineNumber:	.word ?							; current line number
 currentType:.byte ?							; current type. $00 if should get one.
 currentYX:	.word ?							; current XY value to return.
 
+compileMode:.byte ? 						; compile mode (8 or 16 bits)
+
 		.send
 
 zeroPageStore = $0780 						; store for $00-$7F
 comStack = $0700							; stack used when compiling
 cStackSize = $80 							; size of compiler stack (max 128)
 
-stackTemp = $06FD 							; stack temporary store.
+stackTemp = $06FF 							; stack temporary store.
 
 TOKEN_REM = $8F 							; REM Token.
 

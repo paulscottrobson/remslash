@@ -37,6 +37,8 @@ Compiler:
 
 		stz 	currentType 						; current type cleared to get first.
 
+		lda 	#8 			 						; set compile mode.					
+		sta 	compileMode
 l1:
 		jsr 	GetElement
 		.byte 	$FF
