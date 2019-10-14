@@ -11,7 +11,7 @@
 
 ; ******************************************************************************
 ;
-;		Check Dictionaries for code at (codePtr). If successful, return
+;		Check Dictionaries for code in tokenBuffer. If successful, return
 ;		CS and dictionary entry in XY, type in A. If failed, return CC.
 ;		
 ; ******************************************************************************
@@ -33,14 +33,6 @@ DictionarySearchSingle:
 		stx 	zTemp0 						; save search dictionary address
 		sty 	zTemp0+1
 		;
-		sec 								; zTemp1 = codePtr - 5 ; this is because
-		lda 	codePtr 					; the text data starts 5 bytes into the record.
-		sbc 	#5
-		sta 	zTemp1
-		lda 	codePtr+1
-		sbc 	#0
-		sta 	zTemp1+1
-		;
 		;		Main search loop
 		;
 _DSSLoop:
@@ -55,9 +47,9 @@ _DSSEntry:
 		ldy 	#5 							; compare the names. Dictionary offset starts at five.
 _DSSCompare:
 		lda 	(zTemp0),y 					; get corresponding character out (back 5)		
-		eor 	(zTemp1),y 					; does it match ? - $00 or $80 if so.
-		asl 	a 							; put bit 7 into C.
+		cmp 	TokenBuffer-5,y 			; does it match ? - $00 or $80 if so.
 		bne 	_DSSGoNext 					; if not, go to the next entry.
+		asl 	a 							; put bit 7 into C.
 		iny 								; point to next character.
 		bcc 	_DSSCompare 				
 		;

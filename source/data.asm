@@ -45,7 +45,7 @@ TOKEN_REM = $8F 							; REM Token.
 
 SMK_TOPSTACK = $FF 							; this marks the top of the compiler stack
 
-ELT_PROCEDURE = $C0 						; retrieved element types
+ELT_PROCEDURE = $80 						; retrieved element types
 ELT_VARIABLE = $00
 ELT_UNKNOWNID = $01
 ELT_CONSTANT = $02

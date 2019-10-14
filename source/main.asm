@@ -25,6 +25,9 @@ CompileRun:
 		jsr 	Compiler
 		rts
 
+SyntaxError:
+		rerror 	"SYNTAX"
+
 ErrorHandler:
 		.byte 	$FF
 
@@ -35,6 +38,6 @@ ErrorHandler:
 		.include 	"generated/dictionary.inc"	; system dictionary.
 		.include 	"utility/constant.asm" 		; ASCII -> Integer conversion.			
 		.include 	"utility/state.asm"			; state save/load.
-
+		.include 	"utility/tostring.asm"		; integer to string.
 		.include 	"utility/loadcode.asm" 		; last so it changes the bare minimum.	
 EndCode:		

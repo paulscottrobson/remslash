@@ -47,6 +47,16 @@ NextElement:
 ;		Puts results in currentType/currentYX. 
 ;		If fails currentType will be $00
 ;
+;		1) Checks to see if it is a quoted string
+;		2) If $ found, it expects a hexadecimal constant.
+;		3) If a non-identifier character is found, it first matches 2 then
+; 		   1 characters against the dictionaries ; otherwise it returns it
+;		   as an untokenised character
+;		4) It sees if the identifier is known, and returns appropriate codes
+;		   for defined variables, constants and tokens.
+;		5) It tries to convert to a decimal constant
+;		6) It returns an unknown identifier.
+;
 ; ******************************************************************************
 
 GetNextElement:
@@ -105,55 +115,118 @@ _GNENotQString:
 		jmp 	_GNEExit
 _GNEBadHex: 								; not legitimate hex constant.
 		rerror 	"BAD HEX"
+
 		; -------------------------------------------------------------------
 		;
-		;			 Search the dictionary for the current word.
+		;		If character is not alphanumeric, try the first two,
+		;		then the first against the dictionary, if no matches
+		;		return the first as a character.
 		;
 		; -------------------------------------------------------------------
 _GNENotHexadecimal:
+		lda 	(codePtr) 					; is the first character alphanumeric ?
+		jsr 	IsCharIdentifier
+		bcs 	_GNEIsAlphaNumeric
+		;
+		ldy 	#1 							; try the first 2 characters
+		lda 	(codePtr)
+		sta 	tokenBuffer
+		lda 	(codePtr),y
+		ora 	#$80
+		sta 	tokenBuffer+1
 		jsr 	DictionarySearch
-		bcc 	_GNENotKnown 
-		stx 	zTemp0 						; save entry address.
+		bcs 	_GNECTFound 				
+		;
+		lda 	tokenBuffer 				; try the first character only
+		ora 	#$80
+		sta 	tokenBuffer
+		jsr 	DictionarySearch
+		bcs 	_GNECTFound 				
+
+		lda 	(codePtr)					; just return the token as a single char.
+		cmp 	#$40 						; it cannot be in the range 40-7F.
+		bcs 	_GNECTSyntax
+		ldy 	#1
+		jmp 	_GNEExit		
+		;
+_GNECTFound:
+		stx 	zTemp0 						; address in zTemp0
 		sty 	zTemp0+1
-		ldy 	#4 							; find how long it is, +5
-_GNEGetLength:
+		ldy 	#2 							; get the token
+		lda 	(zTemp0),y
+		pha  								; save it
+		ldy 	#1
+		lda 	tokenBuffer 				; first char of token buffer
+		bmi 	_GNECTGotSize 				; if bit 7 set 1 character matched
 		iny
-		lda 	(zTemp0),y
-		bpl 	_GNEGetLength
+_GNECTGotSize:	
+		pla 								; restore the token.
+		jmp 	_GNEExit		
+
+_GNECTSyntax:
+		jmp 	SyntaxError
+
+		; -------------------------------------------------------------------
 		;
-		tya 								; actual token length
-		sec
-		sbc 	#5-1
-		pha 								; save length on the stack.
+		;		Alphanumeric. See if it is a known identifier.
 		;
-		ldy 	#2							; copy the data to the XY
-		lda 	(zTemp0),y
-		sta 	currentYX
-		iny
-		lda 	(zTemp0),y
-		sta 	currentYX+1
+		; -------------------------------------------------------------------
+_GNEIsAlphaNumeric:
+		jsr 	ExtractAlphaNumericToken 	; pull an alphanumeric token -> buffer.
+		pha 								; save token length on stack.	
+		;
+		jsr 	DictionarySearch 			; figure out what it is ?
+		bcc 	_GNEIsUnknown
+		stx 	currentYX 					; this value is returned.
+		sty 	currentYX+1
+		;
+		lda 	(currentYX),y 				; if it is 1xxx xxxx then do it with $80
+		and 	#$80						; (this is a procedure)
+		bne 	_GNEDoElement 
 		;
 		ldy 	#1 							; get type
-		lda 	(zTemp0),y
-		and 	#$C0 						; is it a procedure 11xxx xxxx
-		cmp 	#$C0 			
-		beq 	_GNETokenType 				; if so, exit with type $C0
+		lda 	(currentYX),y
+		and 	#$F8 						; if it is $08-$0F then it is a variable
+		eor 	#$08 						; so 1111 1xxx masked, then check it is 
+		beq		_GNEDoElement 				; 0000 1xxx. This returns zero.
 		;
-		lda 	(zTemp0),y 					; get type and clear bit 7
-		and 	#$7F
-		beq 	_GNETokenType 				; was $00 or $80, local/global.
-		dec 	a 
-		beq 	_GNEIsToken 				; if $01, then it is a token.		
 		;
-		rerror 	"?INTL" 					; this should happen.
+		lda 	(currentYX),y 				; otherwise it must be a token.
+		cmp 	#1
+		bne 	_GNEInternal 				; otherwise we have a problem .....
+		;
+		iny
+		lda 	(currentYX),y				; token in A
+_GNEDoElement:		
+		ply 								; length in Y
+		jmp 	_GNEExit
+;
+_GNEInternal:		 						; illegal value in dictionary ?
+		rerror 	"I#0" 					
+		; -------------------------------------------------------------------
+		;
+		;		There is now an identifier in the token buffer whose length
+		;		is pushed on the stack. It is either a decimal constant, or
+		;		an unknown identifier.
+		;
+		; -------------------------------------------------------------------
 
-_GNEIsToken:
-		lda 	currentYX 					; return the token itself.
-_GNETokenType:
-		ply 								; length into Y
+_GNEIsUnknown:
+		lda 	#10 						; try converting it to base 10
+		jsr 	ConstantToInteger 			; convert to integer
+		bcs 	_GNEIsInteger 				; it converted ok.
+		;
+		set16 	currentYX,tokenBuffer 		; unknown, so return that
+		lda 	#ELT_UNKNOWNID
+		ply
+		bra 	_GNEExit 				
+;
+_GNEIsInteger:
+		stx 	currentYX 					; save the resulting integer
+		sty 	currentYX+1
+		lda 	#ELT_CONSTANT 				; and return a constant
+		ply
 		bra 	_GNEExit
-
-_GNENotKnown:
 
 		; -------------------------------------------------------------------
 		;
@@ -230,10 +303,3 @@ _ICINo:	clc
 _ICIYes:sec
 		rts
 
-		;
-		; 		is it a non-identifier character, if so, return that.
-		;		extract the identifier.
-		;		is it a decimal constant, if so convert and return that.
-		;		return as an unknown identifier.
-		;
-		rts

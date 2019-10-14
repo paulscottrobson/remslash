@@ -4,7 +4,7 @@
 ;		Name : 		constant.asm
 ;		Purpose : 	Try to convert buffer to a constant.
 ;		Author : 	Paul Robson (paul@robsons.org.uk)
-;		Created : 	13th October 2019
+;		Created : 	14th October 2019
 ;
 ; ******************************************************************************
 ; ******************************************************************************

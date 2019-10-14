@@ -1,0 +1,16 @@
+TODO List
+=========
+
+Import error file from dotRem
+Dispatcher for tokens.
+Variable Declarations (generalise for parameters and procedure def check)
+Check variable find works.
+Terms
+Store
+Binary
+Unary
+Inline
+Procedure definitions
+Procedure Invocation
+Forward /
+Structures

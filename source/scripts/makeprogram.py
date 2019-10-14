@@ -41,7 +41,7 @@ class BasicProgram(object):
 		h.close()
 
 bp = BasicProgram()
-bp.add('endif ++ + >= $20A"hello"')
+bp.add('endif what.ident >= > % $20A"hello"')
 
 bp.complete()
 bp.writeProgram()
