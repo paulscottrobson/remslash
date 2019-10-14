@@ -57,7 +57,6 @@ GetNextElement:
 _GNEData:
 		.byte 	$FF
 		;
-		;		complete and load system dictionary generation
 		;		if character a quoted string, return that.
 		;		if character a hexadecimal constant, return that.
 		;		is character a known token/variable/procedure ? if so return that.
@@ -71,7 +70,7 @@ _GNEData:
 
 ; ******************************************************************************
 ;
-;						Is A an identifier character
+;					Is A an identifier character ? CS if so.
 ;
 ; ******************************************************************************
 
