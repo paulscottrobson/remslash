@@ -11,45 +11,13 @@
 
 ; ******************************************************************************
 ;
-;			Convert Buffer to Integer in YX. CS = Okay, CC = Failed.
+;		Convert Buffer to Integer in YX, base A. CS = Okay, CC = Failed.
 ;
 ; ******************************************************************************
 
 ConstantToInteger:
-		ldy 	#16 						; base to use.
-		ldx 	#1 							; character offset.
-		;
-		lda 	tokenBuffer 				; first character
-		cmp 	#"&"						; is it hexadecimal
-		beq 	_CTIConvert 				; convert from character 1, base 16.
-		;
-		dex 								; from character 0
-		ldy 	#10 						; base 10.
-		cmp 	#"-"						; first char is unary minus ?
-		bne 	_CTIConvert 				; no, convert as +ve decimal
-		;
-		inx 								; skip the minus
-		jsr 	_CTIConvert 				; convert the unsigned part.
-		bcc 	_CTIExit 					; failed
-		;
-		txa 								; 1's complement YX
-		eor 	#$FF
-		tax
-		tya
-		eor 	#$FF
-		tay
-		;
-		inx 								; +1 to make it negative
-		sec
-		bne 	_CTIExit
-		iny
-_CTIExit:
-		rts		
-;
-;		Offset in token buffer in X, base to use in Y.
-;
-_CTIConvert:		
-		sty 	zTemp1 						; save base in zTemp1
+		ldx 	#0 							; character offset.
+		sta 	zTemp1 						; save base in zTemp1
 		lda 	tokenBuffer,x 				; get first character
 		beq 	_CTIFail 					; if zero, then it has failed anyway.
 		;
@@ -123,3 +91,4 @@ _CTINoCarry:
 _CTIFail:		
 		clc
 		rts
+		

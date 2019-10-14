@@ -21,18 +21,18 @@ keywords = """
 	times tend
 	inline
 	+ - * : &
-	$
 	++ -- << >> > = >= <> /
 """.replace("\t"," ").replace("\n"," ").upper().split()
 keywords.sort()
+keywords.reverse()			# puts ++ before +
 #
 #		Create the dictionary
 #
 h = open("generated/dictionary.inc","w")
-h.write("SystemDictionary:\n")
+h.write("StandardDictionary:\n")
 for i in range(0,len(keywords)):
 	h.write("\t.byte {0} ; *** {1} ***\n".format(len(keywords[i])+5,keywords[i]))
-	h.write("\t.byte $81\n")
+	h.write("\t.byte $01\n")
 	h.write("\t.byte ${0:02x},$00,$00\n".format(i+0x80))
 	name = [ord(x) for x in keywords[i].upper()]
 	name[-1] |= 0x80

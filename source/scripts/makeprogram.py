@@ -41,7 +41,7 @@ class BasicProgram(object):
 		h.close()
 
 bp = BasicProgram()
-bp.add("def test 107 10 mod exit")
+bp.add('endif ++ + >= $20A"hello"')
 
 bp.complete()
 bp.writeProgram()

@@ -26,7 +26,7 @@ FindNextToken:
 		;		skip forward looking for the next REM/ line.
 		;
 _FNTEndOfLine:
-		inc16 	codePtr 					; advance to offset word.
+		jsr 	IncCodePtr					; advance to offset word.
 _FNTNextLine:		
 		lda 	(codePtr) 					; if the offset word is zero.
 		ldy 	#1 							; then exit
@@ -92,7 +92,7 @@ _FNTNotEOL:
 		cmp 	#" "						; is it space ?
 		bne 	_FNTNotSpace 				; found a non space character, start extracting.
 		;
-		inc16 	codePtr 					; space - go past it and loop round
+		jsr 	IncCodePtr 					; space - go past it and loop round
 		bra 	_FNTNotEOL
 		;
 		;		Found a non-space character
@@ -104,3 +104,14 @@ _FNTExit:
 		plx
 		pla
 		rts
+
+; ******************************************************************************
+;
+;						Increment the code Pointer
+;
+; ******************************************************************************
+
+IncCodePtr:
+		inc16 	codePtr
+		rts
+		

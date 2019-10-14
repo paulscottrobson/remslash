@@ -37,8 +37,12 @@ Compiler:
 
 		stz 	currentType 						; current type cleared to get first.
 
+l1:
 		jsr 	GetElement
-		
+		.byte 	$FF
+		jsr 	NextElement
+		bra 	l1
+
 CompileTerminate:		
 		ldx 	stackTemp 							; restore the stack pointer
 		txs
