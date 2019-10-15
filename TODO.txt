@@ -1,6 +1,8 @@
 TODO List
 =========
 
+Remove autoConversion of REM - it doesn't work because of tokenising.
+
 Term Evaluator
 	- takes the result of term and converts it to a word or byte value
 	  constant or address reference. Add support for references @identifier

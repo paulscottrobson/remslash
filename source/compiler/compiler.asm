@@ -24,7 +24,7 @@ Compiler:
 		;		Set up pointers and clear user dictionary.
 		;
 		set16	codePtr,SourceCode-1 				; point at the $00 before the program
-													; which makes the scanner think of line end.
+													; which makes the scanner think line end.
 
 		set16 	dictPtr,UserDictionary				; next free slot in user dictionary.
 		stz 	UserDictionary 						; clear the user dictionary.
@@ -69,8 +69,8 @@ CallZTemp0:
 		jmp 	(zTemp0)
 		;
 		;		Got something (type in A, data in XY, that is not a token)
-		;		Could be a procedure, variable, unknown identifier,string 
-		;		or constant.
+		;		Could be a procedure invocation, variable, 
+		;		unknown identifier,string or constant.
 		;
 CompileNotToken:
 		.byte 	$FF
